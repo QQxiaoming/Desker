@@ -1,30 +1,28 @@
-/*
-******************************************************************************
-* Copyright (c) 2017,学生开放实验室
-* All rights reserved.
-******************************************************************************
-* 文件名称： mianwindow.cpp
-* 文件标识： mainwindow
-* 摘    要: 主窗口
-******************************************************************************
-* 当前版本： 1.0
-* 作者    : zhiliao007
-* 创建日期： 2018-01-01T15:13:15
-******************************************************************************
-*/
-
+/**
+ * @file mainwindow.cpp
+ * @author zhiliao007
+ * @brief 主窗口
+ * @version 1.0
+ * @date 2018-01-01
+ * 
+ * @copyright Copyright (c) 2017,学生开放实验室
+ * 
+ */
 #include <QString>
 #include <QAction>
 #include <QMenu>
 #include <QIcon>
 #include <QPainter>
-#include <QDebug>
 #include <QDir>
 #include <QDesktopServices>
 #include <QStringList>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
+#ifndef QT_NO_DEBUG
+#include <QDebug>
+#endif
 
 #if defined(Q_OS_WIN)
 #include <QtWin>
@@ -35,6 +33,12 @@
 #include <QProcess>
 #endif
 
+
+/**
+ * @brief Construct a new Main Window:: Main Window object
+ * 
+ * @param parent 
+ */
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow)
 {
@@ -63,9 +67,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     ui->label->setPixmap(getIcon(Path + "//图像.exe", true));
     //ui->label->setPixmap(getIcon("D:\\Program Files (x86)\\Arduino\\arduino.exe",true));
 #endif
+
 #if defined(Q_OS_LINUX)
     QString desktop_path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+#ifndef QT_NO_DEBUG
     qDebug() << desktop_path;
+#endif
     ui->label->setAlignment(Qt::AlignCenter);
     ui->label->setPixmap(getIcon(desktop_path + "/Visual Studio Code", true).scaled(QSize(48, 48), Qt::KeepAspectRatio));
     ui->label_2->setText("Visual Studio Code");
@@ -74,11 +81,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 #endif
 }
 
+
+/**
+ * @brief Destroy the Main Window:: Main Window object
+ * 
+ */
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
+
+/**
+ * @brief 获取图标图片
+ * 
+ * @param sourceFile 
+ * @param sizeFlag 
+ * @return QPixmap 
+ */
 QPixmap MainWindow::getIcon(const QString sourceFile, bool sizeFlag)
 {
 #if defined(Q_OS_WIN)
@@ -104,11 +124,54 @@ QPixmap MainWindow::getIcon(const QString sourceFile, bool sizeFlag)
 #endif
 
 #if defined(Q_OS_LINUX)
-    return QPixmap("/snap/vscode/72/usr/share/pixmaps/code.png");
+    return QPixmap("/usr/share/pixmaps/com.visualstudio.code.png");
 #endif
 }
 
-//重写右击事件
+
+/**
+ * @brief 获取图标图片
+ *
+ * @param sourceFile
+ * @param sizeFlag
+ * @return QPixmap
+ */
+QPixmap MainWindow::getFolderIcon(void)
+{
+#if defined(Q_OS_WIN)
+
+#endif
+
+#if defined(Q_OS_LINUX)
+    /* 这里调用dcof获取桌面壁纸路径 */
+    QProcess process;
+
+    /* gnome*/
+    //process.start("gsettings", QStringList()<<"get"<<"org.gnome.desktop.background"<<"picture-uri");
+    /* mate */
+    process.start("gsettings", QStringList() << "get"
+                                             << "org.mate.interface"
+                                             << "icon-theme");
+
+    if (process.waitForStarted(-1))
+    {
+        while (process.waitForReadyRead(-1))
+        {
+            //qDebug() << "readAllStandardOutput:" << process.readAllStandardOutput();
+            QString theme = QString::fromLocal8Bit(process.readAllStandardOutput());
+
+        }
+    }
+    return QPixmap("/usr/share/pixmaps/com.visualstudio.code.png");
+#endif
+}
+
+
+/**
+ * @brief 窗口菜单事件
+ * 
+ * @param event 
+ */
 void MainWindow::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu *menu = new QMenu(this);
@@ -141,7 +204,12 @@ void MainWindow::contextMenuEvent(QContextMenuEvent *event)
     menu->show();
 }
 
-//重写鼠标双击事件
+
+/**
+ * @brief 窗口鼠标双击事件
+ * 
+ * @param event 
+ */
 void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
 {
     //如果鼠标按下的是左键
@@ -161,10 +229,15 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
     }
 }
 
-//背景重绘
+
+/**
+ * @brief 窗口背景重绘事件
+ * 
+ * @param event 
+ */
 void MainWindow::paintEvent(QPaintEvent *event)
 {
-    QString paths = NULL;
+    QString paths = nullptr;
     QPainter painter(this);
 
 #if defined(Q_OS_WIN)
@@ -173,7 +246,9 @@ void MainWindow::paintEvent(QPaintEvent *event)
     SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, chPath, 0);
     QString path = TCHARToQString(chPath);
     paths = path.replace(QRegExp("\\\\"), "/");
-#elif defined(Q_OS_LINUX)
+#endif
+
+#if defined(Q_OS_LINUX)
     /* 这里调用dcof获取桌面壁纸路径 */
     QProcess process;
 
@@ -196,14 +271,11 @@ void MainWindow::paintEvent(QPaintEvent *event)
     }
 #endif
 
-#ifdef QT_NO_DEBUG
-
-#else
+#ifndef QT_NO_DEBUG
     qDebug() << "paths addr:" << paths;
-#endif //QT_NO_DEBUG
+#endif
 
     //绘制背景
     painter.drawPixmap(0, 0, width(), height(), QPixmap(paths));
 }
 
-/************** (C) COPYRIGHT 2014-2018 学生开放实验室 *****END OF FILE*********/
